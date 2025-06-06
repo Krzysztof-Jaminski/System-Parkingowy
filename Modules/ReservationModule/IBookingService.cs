@@ -1,4 +1,5 @@
-using System_Parkingowy.Modules.DatabaseModule;
+using System;
+using Models;
 
 namespace System_Parkingowy.Modules.BookingModule
 {
@@ -6,8 +7,8 @@ namespace System_Parkingowy.Modules.BookingModule
     public interface IBookingService
     {
         void SearchParkingSpot(string location);      // Wyszukiwanie miejsca
-        void MakeReservation(ReservationData data);   // Rezerwacja miejsca
-        void EditReservation(string id, ReservationData newData); // Edycja rezerwacji
-        void CancelReservation(string id);            // Anulowanie rezerwacji
+        void MakeReservation(Reservation reservation);   // Rezerwacja miejsca
+        void EditReservation(int id, DateTime newStart, DateTime newEnd); // Edycja rezerwacji
+        void CancelReservation(int id);            // Anulowanie rezerwacji
     }
 }

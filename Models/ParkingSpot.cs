@@ -5,27 +5,27 @@ namespace Models
     // Reprezentuje miejsce parkingowe
     public class ParkingSpot
     {
-        public string Id { get; }
+        public int Id { get; }
         public string Location { get; }
-        public bool IsReserved { get; private set; }
-        public ReservationData ReservationData { get; set; }
+        public string Zone { get; }
+        public bool Available { get; private set; }
 
-        public ParkingSpot(string id, string location)
+        public ParkingSpot(int id, string location, string zone)
         {
             Id = id;
             Location = location;
-            IsReserved = false;
+            Zone = zone;
+            Available = true;
         }
 
-        public void Reserve(ReservationData data)
+        public void MarkFree()
         {
-            ReservationData = data;
-            IsReserved = true;
+            Available = true;
         }
 
-        public void CancelReservation()
+        public void MarkOccupied()
         {
-            IsReserved = false;
+            Available = false;
         }
     }
 }

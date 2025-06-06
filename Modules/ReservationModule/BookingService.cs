@@ -1,17 +1,19 @@
 using System;
 using Models;
 using System_Parkingowy.Modules.DatabaseModule;
+using System.Collections.Generic;
 
 namespace System_Parkingowy.Modules.BookingModule
 {
-    // Usługa rezerwacji
-    public class BookingService : IBookingService
+    // Menedżer rezerwacji
+    public class ReservationManager : IBookingService
     {
         private readonly IDatabaseService _Db;
+        private readonly List<Reservation> _reservations = new();
 
-        public BookingService(IDatabaseService parkingDb)
+        public ReservationManager(IDatabaseService db)
         {
-            _Db = parkingDb;
+            _Db = db;
         }
 
         public void SearchParkingSpot(string location)
@@ -19,11 +21,11 @@ namespace System_Parkingowy.Modules.BookingModule
             var spots = _Db.SearchSpots(location);
             if (spots.Count == 0)
             {
-                Console.WriteLine($"[BookingService] Brak dostępnych miejsc w lokalizacji: {location}");
+                Console.WriteLine($"[ReservationManager] Brak dostępnych miejsc w lokalizacji: {location}");
             }
             else
             {
-                Console.WriteLine($"[BookingService] Dostępne miejsca w lokalizacji {location}:");
+                Console.WriteLine($"[ReservationManager] Dostępne miejsca w lokalizacji {location}:");
                 foreach (var spot in spots)
                 {
                     Console.WriteLine($" - {spot.Id}");
@@ -31,57 +33,64 @@ namespace System_Parkingowy.Modules.BookingModule
             }
         }
 
-        public void MakeReservation(ReservationData data)
+        public void MakeReservation(Reservation reservation)
         {
-            var spot = _Db.GetSpotById(data.SpotId);
-            if (spot == null)
+            if (!reservation.ParkingSpot.Available)
             {
-                Console.WriteLine($"[BookingService] Miejsce {data.SpotId} nie istnieje.");
+                Console.WriteLine($"[ReservationManager] Miejsce {reservation.ParkingSpot.Id} nie jest dostępne do rezerwacji.");
                 return;
             }
 
-            if (spot.IsReserved)
-            {
-                Console.WriteLine($"[BookingService] Miejsce {data.SpotId} jest już zarezerwowane.");
-                return;
-            }
-
-            var user = _Db.GetUserByEmail(data.UserEmail);
+            var user = _Db.GetUserById(reservation.UserId);
             if (user == null)
             {
-                Console.WriteLine($"[BookingService] Użytkownik o adresie e-mail {data.UserEmail} nie istnieje.");
+                Console.WriteLine($"[ReservationManager] Użytkownik o id {reservation.UserId} nie istnieje.");
                 return;
             }
 
-            spot.Reserve(data);
-            Console.WriteLine($"[BookingService] Miejsce {data.SpotId} zostało zarezerwowane od {data.StartTime} do {data.EndTime} przez {data.UserEmail}");
+            try
+            {
+                reservation.ParkingSpot.MarkOccupied();
+                reservation.Confirm();
+                _reservations.Add(reservation);
+                Console.WriteLine($"[ReservationManager] Miejsce {reservation.ParkingSpot.Id} zostało zarezerwowane od {reservation.StartTime} do {reservation.EndTime} przez użytkownika {reservation.UserId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ReservationManager] Błąd rezerwacji: {ex.Message}");
+            }
         }
 
-        public void EditReservation(string id, ReservationData newData)
+        public void EditReservation(int id, DateTime newStart, DateTime newEnd)
         {
-            var spot = _Db.GetSpotById(id);
-            if (spot != null && spot.IsReserved && spot.Id == newData.SpotId)
+            var reservation = _reservations.Find(r => r.Id == id);
+            if (reservation == null)
             {
-                Console.WriteLine($"[BookingService] Rezerwacja na miejscu {id} została edytowana.");
+                Console.WriteLine($"[ReservationManager] Nie znaleziono rezerwacji o id {id}.");
+                return;
             }
-            else
-            {
-                Console.WriteLine($"[BookingService] Nie znaleziono aktywnej rezerwacji {id} lub dane do edycji są błędne.");
-            }
-            spot.Reserve(newData);
+            reservation.StartTime = newStart;
+            reservation.EndTime = newEnd;
+            Console.WriteLine($"[ReservationManager] Rezerwacja {id} została edytowana.");
         }
 
-        public void CancelReservation(string id)
+        public void CancelReservation(int id)
         {
-            var spot = _Db.GetSpotById(id);
-            if (spot != null && spot.IsReserved)
+            var reservation = _reservations.Find(r => r.Id == id);
+            if (reservation == null)
             {
-                spot.CancelReservation();
-                Console.WriteLine($"[BookingService] Rezerwacja na miejscu {id} została anulowana.");
+                Console.WriteLine($"[ReservationManager] Nie znaleziono rezerwacji o id {id}.");
+                return;
             }
-            else
+            try
             {
-                Console.WriteLine($"[BookingService] Nie znaleziono aktywnej rezerwacji dla miejsca {id}.");
+                reservation.ParkingSpot.MarkFree();
+                reservation.Cancel();
+                Console.WriteLine($"[ReservationManager] Rezerwacja {id} została anulowana.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ReservationManager] Błąd anulowania rezerwacji: {ex.Message}");
             }
         }
     }

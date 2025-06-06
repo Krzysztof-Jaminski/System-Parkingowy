@@ -4,42 +4,58 @@ using Models;
 
 namespace System_Parkingowy.Modules.DatabaseModule
 {
-    // Baza danych ze zbiorem użytowników oraz miejsc parkingowych
+    // Baza danych ze zbiorem użytkowników, miejsc parkingowych i rezerwacji
     public class DatabaseService : IDatabaseService
     {
-        private readonly Dictionary<string, User> _users = new();
-        private readonly Dictionary<string, ParkingSpot> _spots = new();
+        private readonly Dictionary<int, User> _users = new();
+        private readonly Dictionary<int, ParkingSpot> _spots = new();
+        private int _nextUserId = 3;
 
         public DatabaseService()
         {
-            AddUser(new User("adam1@gmail.com", "passwd123"));
-            AddUser(new User("anna2@gmail.com", "passwd22"));
+            AddUser(new User(1, "adam1@gmail.com", "123456789", "passwd123"));
+            AddUser(new User(2, "anna2@gmail.com", "987654321", "passwd22"));
 
-            AddParkingSpot(new ParkingSpot("A1", "Location A"));
-            AddParkingSpot(new ParkingSpot("A2", "Location A"));
-            AddParkingSpot(new ParkingSpot("A3", "Location A"));
-            AddParkingSpot(new ParkingSpot("A4", "Location A"));
-            AddParkingSpot(new ParkingSpot("A5", "Location A"));
-            AddParkingSpot(new ParkingSpot("B1", "Location B"));
-            AddParkingSpot(new ParkingSpot("C1", "Location C"));
+            AddParkingSpot(new ParkingSpot(1, "Location A", "A"));
+            AddParkingSpot(new ParkingSpot(2, "Location A", "A"));
+            AddParkingSpot(new ParkingSpot(3, "Location A", "A"));
+            AddParkingSpot(new ParkingSpot(4, "Location A", "A"));
+            AddParkingSpot(new ParkingSpot(5, "Location A", "A"));
+            AddParkingSpot(new ParkingSpot(6, "Location B", "B"));
+            AddParkingSpot(new ParkingSpot(7, "Location C", "C"));
+        }
+
+        public int GetNextUserId()
+        {
+            return _nextUserId++;
         }
 
         // Dodanie nowego użytkownika
         public void AddUser(User user)
         {
-            if (_users.ContainsKey(user.Email))
+            if (_users.ContainsKey(user.Id))
             {
-                throw new Exception("Użytkownik z tym e-mailem już istnieje.");
+                throw new Exception("Użytkownik z tym id już istnieje.");
             }
+            _users[user.Id] = user;
+        }
 
-            _users[user.Email] = user;
+        // Pobranie użytkownika po id
+        public User GetUserById(int id)
+        {
+            _users.TryGetValue(id, out var user);
+            return user;
         }
 
         // Pobranie użytkownika po e-mailu
         public User GetUserByEmail(string email)
         {
-            _users.TryGetValue(email, out var user);
-            return user;
+            foreach (var user in _users.Values)
+            {
+                if (user.Email == email)
+                    return user;
+            }
+            return null;
         }
 
         // Dodanie miejsca parkingowego
@@ -49,12 +65,11 @@ namespace System_Parkingowy.Modules.DatabaseModule
             {
                 throw new Exception("Miejsce parkingowe już istnieje.");
             }
-
             _spots[spot.Id] = spot;
         }
 
         // Pobranie miejsca parkingowego
-        public ParkingSpot GetSpotById(string spotId)
+        public ParkingSpot GetSpotById(int spotId)
         {
             _spots.TryGetValue(spotId, out var spot);
             return spot;
@@ -66,12 +81,11 @@ namespace System_Parkingowy.Modules.DatabaseModule
             var result = new List<ParkingSpot>();
             foreach (var spot in _spots.Values)
             {
-                if (spot.Location == location && !spot.IsReserved)
+                if (spot.Location == location && spot.Available)
                 {
                     result.Add(spot);
                 }
             }
-
             return result;
         }
     }

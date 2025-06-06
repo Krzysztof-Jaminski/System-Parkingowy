@@ -3,6 +3,7 @@ using System_Parkingowy.Modules.AuthModule;
 using System_Parkingowy.Modules.BookingModule;
 using System_Parkingowy.Modules.DatabaseModule;
 using System_Parkingowy.Modules.NotificationModule;
+using Models;
 
 class Program
 {
@@ -12,7 +13,7 @@ class Program
         var DbService = new DatabaseService();
         var emailService = new NotificationService();
         var authService = new AuthService(DbService, emailService);
-        var bookingService = new BookingService(DbService);
+        var reservationManager = new ReservationManager(DbService);
 
         // Rejestracja
         var userData = new UserData("user@gmail.com", "abc123");
@@ -27,24 +28,71 @@ class Program
         // Logowanie po weryfikacji
         Console.WriteLine(authService.Login(userData));
 
+        // Przykład blokowania i odblokowania użytkownika
+        var user = DbService.GetUserByEmail("user@gmail.com");
+        if (user != null)
+        {
+            Console.WriteLine($"Status użytkownika: {user.Status}");
+            try
+            {
+                user.Activate();
+                Console.WriteLine($"Status po aktywacji: {user.Status}");
+                user.Block();
+                Console.WriteLine($"Status po blokadzie: {user.Status}");
+                user.Unblock();
+                Console.WriteLine($"Status po odblokowaniu: {user.Status}");
+                user.Delete();
+                Console.WriteLine($"Status po usunięciu: {user.Status}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Test] Wyjątek User: {ex.Message}");
+            }
+        }
+
         // Rezerwacja
-        bookingService.SearchParkingSpot("Location A");
-        var reservationData = new ReservationData("user@gmail.com","A1","Location A", DateTime.Now, DateTime.Now.AddHours(4));
-        bookingService.MakeReservation(reservationData);
+        reservationManager.SearchParkingSpot("Location A");
+        var spot = DbService.GetSpotById(1);
+        var reservation = new Reservation(1, user.Id, spot, DateTime.Now, DateTime.Now.AddHours(4), 40.0m);
+        reservationManager.MakeReservation(reservation);
 
-        // Próba rezerwacji już zajętego miejsca
-        bookingService.MakeReservation(reservationData);
-
-        // Próba edycji rezerwacji z błędnymi danymi
-        bookingService.EditReservation("A1", new ReservationData("user2@gmail.com","A2", "Location A", DateTime.Now, DateTime.Now.AddHours(2)));
+        // Próba ponownego potwierdzenia (powinien być wyjątek)
+        try
+        {
+            reservation.Confirm();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Test] Wyjątek przy ponownym potwierdzeniu: {ex.Message}");
+        }
 
         // Edycja rezerwacji
-        bookingService.EditReservation("A1", new ReservationData("user2@gmail.com", "A1", "Location A", DateTime.Now, DateTime.Now.AddHours(2)));
+        reservationManager.EditReservation(1, DateTime.Now.AddHours(1), DateTime.Now.AddHours(5));
 
         // Anulowanie rezerwacji
-        bookingService.CancelReservation("A1");
+        reservationManager.CancelReservation(1);
+
+        // Próba anulowania ponownie (powinien być wyjątek)
+        try
+        {
+            reservation.Cancel();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Test] Wyjątek przy ponownym anulowaniu: {ex.Message}");
+        }
+
+        // Próba wygaszenia anulowanej rezerwacji (powinien być wyjątek)
+        try
+        {
+            reservation.Expire();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Test] Wyjątek przy wygaszaniu anulowanej rezerwacji: {ex.Message}");
+        }
 
         // Ponowna rezerwacja po anulowaniu
-        bookingService.MakeReservation(reservationData);
+        reservationManager.MakeReservation(reservation);
     }
 }

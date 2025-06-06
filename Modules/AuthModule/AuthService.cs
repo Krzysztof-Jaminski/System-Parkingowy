@@ -32,7 +32,7 @@ namespace System_Parkingowy.Modules.AuthModule
                 return;
             }
 
-            var user = new User(data.Email, data.Password);
+            var user = new User(_userDb.GetNextUserId(), data.Email, "", data.Password);
             _userDb.AddUser(user);
             _emailService.SendVerificationEmail(data.Email);
             Console.WriteLine($"[AuthService] Rejestracja zakończona sukcesem.");
@@ -47,8 +47,15 @@ namespace System_Parkingowy.Modules.AuthModule
             if (user.Password != data.Password)
                 return "[AuthService] Logowanie nieudane: Niepoprawne hasło.";
 
-            if (!user.IsVerified)
+            if (user.Status == UserStatus.Pending)
                 return $"[AuthService] Logowanie nieudane: Konto {data.Email} nie jest zweryfikowane.";
+            if (user.Status == UserStatus.Blocked)
+                return $"[AuthService] Logowanie nieudane: Konto {data.Email} jest zablokowane.";
+            if (user.Status == UserStatus.Deleted)
+                return $"[AuthService] Logowanie nieudane: Konto {data.Email} zostało usunięte.";
+
+            if (user.Status != UserStatus.Active)
+                return $"[AuthService] Logowanie nieudane: Konto {data.Email} nie jest aktywne.";
 
             return $"[AuthService] Logowanie udane! Witaj {data.Email}.";
         }
@@ -61,9 +68,15 @@ namespace System_Parkingowy.Modules.AuthModule
                 Console.WriteLine($"[AuthService] Nie można zweryfikować: użytkownik {email} nie istnieje.");
                 return;
             }
-
-            user.Verify();
-            Console.WriteLine($"[AuthService] Konto {email} zostało zweryfikowane.");
+            try
+            {
+                user.Activate();
+                Console.WriteLine($"[AuthService] Konto {email} zostało zweryfikowane i aktywowane.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AuthService] Błąd weryfikacji: {ex.Message}");
+            }
         }
 
         private bool IsValidPassword(string password)
