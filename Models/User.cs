@@ -53,5 +53,12 @@ namespace Models
                 throw new System.InvalidOperationException("Użytkownik już usunięty.");
             Status = UserStatus.Deleted;
         }
+
+        public void Deactivate()
+        {
+            if (Status != UserStatus.Active)
+                throw new System.InvalidOperationException("Można dezaktywować tylko aktywnego użytkownika.");
+            Status = UserStatus.Pending;
+        }
     }
 }

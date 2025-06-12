@@ -10,6 +10,7 @@ namespace System_Parkingowy.Modules.DatabaseModule
         private readonly Dictionary<int, User> _users = new();
         private readonly Dictionary<int, ParkingSpot> _spots = new();
         private int _nextUserId = 3;
+        private int _nextReservationId = 1;
 
         public DatabaseService()
         {
@@ -28,6 +29,11 @@ namespace System_Parkingowy.Modules.DatabaseModule
         public int GetNextUserId()
         {
             return _nextUserId++;
+        }
+
+        public int GetNextReservationId()
+        {
+            return _nextReservationId++;
         }
 
         // Dodanie nowego użytkownika
@@ -87,6 +93,11 @@ namespace System_Parkingowy.Modules.DatabaseModule
                 }
             }
             return result;
+        }
+
+        public List<ParkingSpot> GetAllParkingSpots()
+        {
+            return new List<ParkingSpot>(_spots.Values);
         }
     }
 }

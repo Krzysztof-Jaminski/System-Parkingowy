@@ -3,96 +3,57 @@ using System_Parkingowy.Modules.AuthModule;
 using System_Parkingowy.Modules.BookingModule;
 using System_Parkingowy.Modules.DatabaseModule;
 using System_Parkingowy.Modules.NotificationModule;
+using System_Parkingowy.Modules.PaymentModule;
 using Models;
 
 class Program
 {
     static void Main()
     {
-        // Setup
         var DbService = new DatabaseService();
-        var emailService = new NotificationService();
-        var authService = new AuthService(DbService, emailService);
-        var reservationManager = new ReservationManager(DbService);
+        var notificationService = new NotificationService(new StandardNotificationFactory());
+        var authService = new AuthService(DbService, notificationService);
+        var reservationManager = new ReservationManager(DbService, notificationService);
 
-        // Rejestracja
-        var userData = new UserData("user@gmail.com", "abc123");
-        authService.Register(userData);
-
-        // Logowanie przed weryfikacja
-        Console.WriteLine(authService.Login(userData));
-
-        // Symulacja weryfikacji maila przez link
-        authService.Verify("user@gmail.com");
-
-        // Logowanie po weryfikacji
-        Console.WriteLine(authService.Login(userData));
-
-        // Przykład blokowania i odblokowania użytkownika
-        var user = DbService.GetUserByEmail("user@gmail.com");
-        if (user != null)
-        {
-            Console.WriteLine($"Status użytkownika: {user.Status}");
-            try
-            {
-                user.Activate();
-                Console.WriteLine($"Status po aktywacji: {user.Status}");
-                user.Block();
-                Console.WriteLine($"Status po blokadzie: {user.Status}");
-                user.Unblock();
-                Console.WriteLine($"Status po odblokowaniu: {user.Status}");
-                user.Delete();
-                Console.WriteLine($"Status po usunięciu: {user.Status}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[Test] Wyjątek User: {ex.Message}");
-            }
-        }
-
-        // Rezerwacja
+        Console.WriteLine("\n=== SCENARIUSZ 1: REZERWACJA I ANULOWANIE ===");
         reservationManager.SearchParkingSpot("Location A");
+
+        var user1 = RegisterAndVerifyUser(authService, DbService, "user1@example.com", "Pass123");
+        if (user1 == null) return;
+
         var spot = DbService.GetSpotById(1);
-        var reservation = new Reservation(1, user.Id, spot, DateTime.Now, DateTime.Now.AddHours(4), 40.0m);
-        reservationManager.MakeReservation(reservation);
+        var reservation1 = new Reservation(DbService.GetNextReservationId(), user1.Id, spot, 
+            DateTime.Now.Date.AddHours(10), DateTime.Now.Date.AddHours(12), 50.0m);
+        
+        reservationManager.MakeReservation(reservation1);
+        reservationManager.PayForReservation(reservation1.Id, new CreditCardPaymentFactory());
+        reservationManager.CancelReservation(reservation1.Id);
 
-        // Próba ponownego potwierdzenia (powinien być wyjątek)
-        try
-        {
-            reservation.Confirm();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Test] Wyjątek przy ponownym potwierdzeniu: {ex.Message}");
-        }
+        Console.WriteLine("\n=== SCENARIUSZ 2: DWIE REZERWACJE W RÓŻNYCH TERMINACH ===");
+        reservationManager.SearchParkingSpot("Location A");
 
-        // Edycja rezerwacji
-        reservationManager.EditReservation(1, DateTime.Now.AddHours(1), DateTime.Now.AddHours(5));
+        var user2 = RegisterAndVerifyUser(authService, DbService, "user2@example.com", "Pass456");
+        var user3 = RegisterAndVerifyUser(authService, DbService, "user3@example.com", "Pass789");
+        if (user2 == null || user3 == null) return;
 
-        // Anulowanie rezerwacji
-        reservationManager.CancelReservation(1);
+        var reservation2 = new Reservation(DbService.GetNextReservationId(), user2.Id, spot,
+            DateTime.Now.Date.AddHours(8), DateTime.Now.Date.AddHours(10), 40.0m);
+        var reservation3 = new Reservation(DbService.GetNextReservationId(), user3.Id, spot,
+            DateTime.Now.Date.AddHours(14), DateTime.Now.Date.AddHours(16), 40.0m);
 
-        // Próba anulowania ponownie (powinien być wyjątek)
-        try
-        {
-            reservation.Cancel();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Test] Wyjątek przy ponownym anulowaniu: {ex.Message}");
-        }
+        reservationManager.MakeReservation(reservation2);
+        reservationManager.PayForReservation(reservation2.Id, new CreditCardPaymentFactory());
+        reservationManager.MakeReservation(reservation3);
 
-        // Próba wygaszenia anulowanej rezerwacji (powinien być wyjątek)
-        try
-        {
-            reservation.Expire();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[Test] Wyjątek przy wygaszaniu anulowanej rezerwacji: {ex.Message}");
-        }
+        Console.WriteLine($"\nStatus rezerwacji 2: {reservationManager.GetReservationStatus(reservation2.Id)}");
+        Console.WriteLine($"Status rezerwacji 3: {reservationManager.GetReservationStatus(reservation3.Id)}");
+        Console.ReadKey();
+    }
 
-        // Ponowna rezerwacja po anulowaniu
-        reservationManager.MakeReservation(reservation);
+    private static User RegisterAndVerifyUser(AuthService authService, DatabaseService dbService, string email, string password)
+    {
+        authService.Register(new UserData(email, password));
+        authService.Verify(email);
+        return dbService.GetUserByEmail(email);
     }
 }

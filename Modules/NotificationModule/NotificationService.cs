@@ -2,12 +2,33 @@ using System;
 
 namespace System_Parkingowy.Modules.NotificationModule
 {
-    // Usługa wysyłania e-maili
-    public class NotificationService : INotification
+    public class NotificationService
     {
-        public void SendVerificationEmail(string email)
+        private readonly INotificationFactory _notificationFactory;
+
+        public NotificationService(INotificationFactory notificationFactory)
         {
-            Console.WriteLine($"[NotificationService] Wysłano e-mail weryfikacyjny na adres: {email}");
+            _notificationFactory = notificationFactory;
+        }
+
+        public void SendNotifications(string recipientIdentifier, string messageContent, NotificationType type)
+        {
+            INotifier notifier;
+            switch (type)
+            {
+                case NotificationType.Email:
+                    notifier = _notificationFactory.CreateEmailNotifier();
+                    break;
+                case NotificationType.Sms:
+                    notifier = _notificationFactory.CreateSmsNotifier();
+                    break;
+                case NotificationType.Push:
+                    notifier = _notificationFactory.CreatePushNotifier();
+                    break;
+                default:
+                    throw new ArgumentException("Nieznany typ powiadomienia.");
+            }
+            notifier.SendMessage(recipientIdentifier, messageContent);
         }
     }
 }

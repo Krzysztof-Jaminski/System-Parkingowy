@@ -7,7 +7,9 @@ namespace Models
         Pending,
         Confirmed,
         Cancelled,
-        Expired
+        Expired,
+        Paid,
+        Unknown
     }
 
     // Rezerwacja
@@ -48,8 +50,8 @@ namespace Models
 
         public void Expire()
         {
-            if (Status != ReservationStatus.Pending)
-                throw new InvalidOperationException("Tylko rezerwacja oczekująca może wygasnąć.");
+            if (Status != ReservationStatus.Pending && Status != ReservationStatus.Confirmed && Status != ReservationStatus.Paid)
+                throw new InvalidOperationException("Rezerwacja musi być w stanie oczekującym, potwierdzonym lub opłaconym, aby mogła wygasnąć.");
             Status = ReservationStatus.Expired;
         }
     }
