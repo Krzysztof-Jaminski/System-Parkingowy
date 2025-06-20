@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using Swashbuckle.AspNetCore.Filters;
+
 namespace Models
 {
     public enum UserStatus
@@ -11,11 +15,16 @@ namespace Models
     // Reprezentuje użytkownika systemu / kierowcę
     public class User
     {
-        public int Id { get; }
-        public string Email { get; }
-        public string PhoneNumber { get; }
-        public string Password { get; }
-        public UserStatus Status { get; private set; }
+        [Key]
+        public int Id { get; set; }
+        public string Email { get; set; }
+        public string PhoneNumber { get; set; }
+        public string Password { get; set; }
+        public UserStatus Status { get; set; }
+        public string Role { get; set; } // "Driver" lub "Admin"
+        public ICollection<Reservation> Reservations { get; set; }
+
+        public User() {}
 
         public User(int id, string email, string phoneNumber, string password)
         {
@@ -60,5 +69,19 @@ namespace Models
                 throw new System.InvalidOperationException("Można dezaktywować tylko aktywnego użytkownika.");
             Status = UserStatus.Pending;
         }
+    }
+
+    public class UserListResponseExample : IExamplesProvider<IEnumerable<User>>
+    {
+        public IEnumerable<User> GetExamples() => new List<User>
+        {
+            new User { Id = 1, Email = "adam1@gmail.com", PhoneNumber = "123456789", Password = "passwd123", Status = UserStatus.Active },
+            new User { Id = 2, Email = "anna2@gmail.com", PhoneNumber = "987654321", Password = "passwd22", Status = UserStatus.Active }
+        };
+    }
+
+    public class UserResponseExample : IExamplesProvider<User>
+    {
+        public User GetExamples() => new User { Id = 1, Email = "adam1@gmail.com", PhoneNumber = "123456789", Password = "passwd123", Status = UserStatus.Active };
     }
 }

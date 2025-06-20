@@ -1,4 +1,5 @@
 using System;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace System_Parkingowy.Modules.DatabaseModule
 {
@@ -19,5 +20,24 @@ namespace System_Parkingowy.Modules.DatabaseModule
             EndTime = end;
             UserEmail = userEmail;
         }
+    }
+
+    public class ReservationDataExample : IExamplesProvider<ReservationData>
+    {
+        public ReservationData GetExamples()
+        {
+            return new ReservationData(
+                userEmail: "adam1@gmail.com",
+                spotId: "1",
+                location: "Location A",
+                start: DateTime.Now.Date.AddHours(10),
+                end: DateTime.Now.Date.AddHours(12)
+            );
+        }
+    }
+
+    public class ReservationResponseExample : IExamplesProvider<string>
+    {
+        public string GetExamples() => "Reservation created";
     }
 }

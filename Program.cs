@@ -1,59 +1,74 @@
-using System;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System_Parkingowy.Modules.AuthModule;
-using System_Parkingowy.Modules.BookingModule;
 using System_Parkingowy.Modules.DatabaseModule;
 using System_Parkingowy.Modules.NotificationModule;
+using System_Parkingowy.Modules.BookingModule;
 using System_Parkingowy.Modules.PaymentModule;
-using Models;
+using Microsoft.OpenApi.Models;
+using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.Filters;
+using System_Parkingowy.Modules.SimulationModule;
+using System_Parkingowy.Controllers;
 
-class Program
+var builder = WebApplication.CreateBuilder(args);
+
+// Rejestracja serwisów w DI
+//Services.AddScoped<IDatabaseService, DatabaseService>();
+builder.Services.AddScoped<INotificationFactory, StandardNotificationFactory>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IBookingService, ReservationManager>();
+builder.Services.AddScoped<ParkingSimulator>(sp => {
+    var sim = new ParkingSimulator(10, 2.0);
+    sim.OnSpotStatusChanged += (spotId, occupied, sensorType) => {
+        PredictionController.UpdateHistory(spotId, occupied);
+    };
+    return sim;
+});
+
+// Dodaj DbContext EF Core
+builder.Services.AddDbContext<ParkingDbContext>(options =>
+    options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ParkingDb;Trusted_Connection=True;"));
+
+// Dodaj Swaggera
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    static void Main()
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
     {
-        var DbService = new DatabaseService();
-        var notificationService = new NotificationService(new StandardNotificationFactory());
-        var authService = new AuthService(DbService, notificationService);
-        var reservationManager = new ReservationManager(DbService, notificationService);
+        Title = "System Parkingowy API",
+        Version = "v1",
+        Description = "API do zarządzania parkingiem, rezerwacjami, użytkownikami i płatnościami."
+    });
 
-        Console.WriteLine("\n=== SCENARIUSZ 1: REZERWACJA I ANULOWANIE ===");
-        reservationManager.SearchParkingSpot("Location A");
+    // Przykładowe modele i requesty
+    c.ExampleFilters();
+});
 
-        var user1 = RegisterAndVerifyUser(authService, DbService, "user1@example.com", "Pass123");
-        if (user1 == null) return;
+builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 
-        var spot = DbService.GetSpotById(1);
-        var reservation1 = new Reservation(DbService.GetNextReservationId(), user1.Id, spot, 
-            DateTime.Now.Date.AddHours(10), DateTime.Now.Date.AddHours(12), 50.0m);
-        
-        reservationManager.MakeReservation(reservation1);
-        reservationManager.PayForReservation(reservation1.Id, new CreditCardPaymentFactory());
-        reservationManager.CancelReservation(reservation1.Id);
+builder.Services.AddControllers();
 
-        Console.WriteLine("\n=== SCENARIUSZ 2: DWIE REZERWACJE W RÓŻNYCH TERMINACH ===");
-        reservationManager.SearchParkingSpot("Location A");
+var app = builder.Build();
 
-        var user2 = RegisterAndVerifyUser(authService, DbService, "user2@example.com", "Pass456");
-        var user3 = RegisterAndVerifyUser(authService, DbService, "user3@example.com", "Pass789");
-        if (user2 == null || user3 == null) return;
+// Włącz Swaggera w trybie deweloperskim
+app.UseSwagger();
+app.UseSwaggerUI();
 
-        var reservation2 = new Reservation(DbService.GetNextReservationId(), user2.Id, spot,
-            DateTime.Now.Date.AddHours(8), DateTime.Now.Date.AddHours(10), 40.0m);
-        var reservation3 = new Reservation(DbService.GetNextReservationId(), user3.Id, spot,
-            DateTime.Now.Date.AddHours(14), DateTime.Now.Date.AddHours(16), 40.0m);
-
-        reservationManager.MakeReservation(reservation2);
-        reservationManager.PayForReservation(reservation2.Id, new CreditCardPaymentFactory());
-        reservationManager.MakeReservation(reservation3);
-
-        Console.WriteLine($"\nStatus rezerwacji 2: {reservationManager.GetReservationStatus(reservation2.Id)}");
-        Console.WriteLine($"Status rezerwacji 3: {reservationManager.GetReservationStatus(reservation3.Id)}");
-        Console.ReadKey();
-    }
-
-    private static User RegisterAndVerifyUser(AuthService authService, DatabaseService dbService, string email, string password)
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/")
     {
-        authService.Register(new UserData(email, password));
-        authService.Verify(email);
-        return dbService.GetUserByEmail(email);
+        context.Response.Redirect("/swagger");
+        return;
     }
-}
+    await next();
+});
+
+app.UseMiddleware<SimpleAuthMiddleware>();
+
+app.MapControllers();
+
+app.Run();

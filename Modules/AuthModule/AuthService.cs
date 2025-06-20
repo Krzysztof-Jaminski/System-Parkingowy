@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Models;
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System_Parkingowy.Modules.DatabaseModule;
 using System_Parkingowy.Modules.NotificationModule;
@@ -9,18 +11,18 @@ namespace System_Parkingowy.Modules.AuthModule
     // Usługa autoryzacji, łączy bazę danych oraz moduł powiadomień
     public class AuthService : IAuthService
     {
-        private readonly IDatabaseService _userDb;
+        private readonly ParkingDbContext _context;
         private readonly NotificationService _notificationService;
 
-        public AuthService(IDatabaseService userDb, NotificationService notificationService)
+        public AuthService(ParkingDbContext context, NotificationService notificationService)
         {
-            _userDb = userDb;
+            _context = context;
             _notificationService = notificationService;
         }
 
-        public void Register(UserData data)
+        public void Register(UserData data, string role = "Driver")
         {
-            if (_userDb.GetUserByEmail(data.Email) != null)
+            if (_context.Users.Any(u => u.Email == data.Email))
             {
                 Console.WriteLine($"[AuthModule] Rejestracja nieudana: {data.Email} już istnieje.");
                 return;
@@ -32,15 +34,21 @@ namespace System_Parkingowy.Modules.AuthModule
                 return;
             }
 
-            var user = new User(_userDb.GetNextUserId(), data.Email, "", data.Password);
-            _userDb.AddUser(user);
+            var user = new User { Email = data.Email, Password = data.Password, Status = UserStatus.Pending, Role = role };
+            _context.Users.Add(user);
+            _context.SaveChanges();
             _notificationService.SendNotifications(data.Email, "Wysłano e-mail weryfikacyjny po rejestracji.", NotificationType.Email);
             Console.WriteLine($"[AuthModule] Rejestracja zakończona sukcesem.");
         }
 
+        public void Register(UserData data)
+        {
+            Register(data, "Driver");
+        }
+
         public string Login(UserData data)
         {
-            var user = _userDb.GetUserByEmail(data.Email);
+            var user = _context.Users.FirstOrDefault(u => u.Email == data.Email);
             if (user == null)
                 return "[AuthModule] Logowanie nieudane: Niepoprawny e-mail.";
 
@@ -62,7 +70,7 @@ namespace System_Parkingowy.Modules.AuthModule
 
         public void Verify(string email)
         {
-            var user = _userDb.GetUserByEmail(email);
+            var user = _context.Users.FirstOrDefault(u => u.Email == email);
             if (user == null)
             {
                 Console.WriteLine($"[AuthModule] Nie można zweryfikować: użytkownik {email} nie istnieje.");
@@ -70,7 +78,8 @@ namespace System_Parkingowy.Modules.AuthModule
             }
             try
             {
-                user.Activate();
+                user.Status = UserStatus.Active;
+                _context.SaveChanges();
                 Console.WriteLine($"[AuthModule] Konto {email} zostało zweryfikowane i aktywowane.");
             }
             catch (Exception ex)
@@ -81,9 +90,7 @@ namespace System_Parkingowy.Modules.AuthModule
 
         private bool IsValidPassword(string password)
         {
-            return password.Length >= 6 &&
-                   Regex.IsMatch(password, @"[a-zA-Z]") &&
-                   Regex.IsMatch(password, @"\d");
+            return password.Length >= 6 && password.Any(char.IsLetter) && password.Any(char.IsDigit);
         }
     }
 }

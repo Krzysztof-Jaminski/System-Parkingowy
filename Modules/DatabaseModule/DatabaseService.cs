@@ -1,103 +1,67 @@
 ﻿using System;
 using System.Collections.Generic;
 using Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace System_Parkingowy.Modules.DatabaseModule
 {
     // Baza danych ze zbiorem użytkowników, miejsc parkingowych i rezerwacji
     public class DatabaseService : IDatabaseService
     {
-        private readonly Dictionary<int, User> _users = new();
-        private readonly Dictionary<int, ParkingSpot> _spots = new();
-        private int _nextUserId = 3;
-        private int _nextReservationId = 1;
+        private readonly ParkingDbContext _context;
 
-        public DatabaseService()
+        public DatabaseService(ParkingDbContext context)
         {
-            AddUser(new User(1, "adam1@gmail.com", "123456789", "passwd123"));
-            AddUser(new User(2, "anna2@gmail.com", "987654321", "passwd22"));
+            _context = context;
+        }
 
-            AddParkingSpot(new ParkingSpot(1, "Location A", "A"));
-            AddParkingSpot(new ParkingSpot(2, "Location A", "A"));
-            AddParkingSpot(new ParkingSpot(3, "Location A", "A"));
-            AddParkingSpot(new ParkingSpot(4, "Location A", "A"));
-            AddParkingSpot(new ParkingSpot(5, "Location A", "A"));
-            AddParkingSpot(new ParkingSpot(6, "Location B", "B"));
-            AddParkingSpot(new ParkingSpot(7, "Location C", "C"));
+        public void AddUser(User user)
+        {
+            _context.Users.Add(user);
+            _context.SaveChanges();
+        }
+
+        public User GetUserByEmail(string email)
+        {
+            return _context.Users.FirstOrDefault(u => u.Email == email);
+        }
+
+        public User GetUserById(int id)
+        {
+            return _context.Users.Find(id);
         }
 
         public int GetNextUserId()
         {
-            return _nextUserId++;
+            // EF Core automatycznie nadaje IDENTITY, więc niepotrzebne
+            return 0;
         }
 
         public int GetNextReservationId()
         {
-            return _nextReservationId++;
+            // EF Core automatycznie nadaje IDENTITY, więc niepotrzebne
+            return 0;
         }
 
-        // Dodanie nowego użytkownika
-        public void AddUser(User user)
-        {
-            if (_users.ContainsKey(user.Id))
-            {
-                throw new Exception("Użytkownik z tym id już istnieje.");
-            }
-            _users[user.Id] = user;
-        }
-
-        // Pobranie użytkownika po id
-        public User GetUserById(int id)
-        {
-            _users.TryGetValue(id, out var user);
-            return user;
-        }
-
-        // Pobranie użytkownika po e-mailu
-        public User GetUserByEmail(string email)
-        {
-            foreach (var user in _users.Values)
-            {
-                if (user.Email == email)
-                    return user;
-            }
-            return null;
-        }
-
-        // Dodanie miejsca parkingowego
         public void AddParkingSpot(ParkingSpot spot)
         {
-            if (_spots.ContainsKey(spot.Id))
-            {
-                throw new Exception("Miejsce parkingowe już istnieje.");
-            }
-            _spots[spot.Id] = spot;
+            _context.ParkingSpots.Add(spot);
+            _context.SaveChanges();
         }
 
-        // Pobranie miejsca parkingowego
-        public ParkingSpot GetSpotById(int spotId)
+        public ParkingSpot GetSpotById(int id)
         {
-            _spots.TryGetValue(spotId, out var spot);
-            return spot;
+            return _context.ParkingSpots.Find(id);
         }
 
-        // Wyszukiwanie dostępnych miejsc w danej lokalizacji
         public List<ParkingSpot> SearchSpots(string location)
         {
-            var result = new List<ParkingSpot>();
-            foreach (var spot in _spots.Values)
-            {
-                if (spot.Location == location && spot.Available)
-                {
-                    result.Add(spot);
-                }
-            }
-            return result;
+            return _context.ParkingSpots.Where(s => s.Location == location && s.Available).ToList();
         }
 
         public List<ParkingSpot> GetAllParkingSpots()
         {
-            return new List<ParkingSpot>(_spots.Values);
+            return _context.ParkingSpots.ToList();
         }
     }
 }

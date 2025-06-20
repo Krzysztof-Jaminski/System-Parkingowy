@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Models
 {
@@ -15,13 +16,18 @@ namespace Models
     // Rezerwacja
     public class Reservation
     {
+        [Key]
         public int Id { get; set; }
         public int UserId { get; set; }
+        public User User { get; set; }
         public ParkingSpot ParkingSpot { get; set; }
+        public int ParkingSpotId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public ReservationStatus Status { get; set; }
         public decimal TotalPrice { get; set; }
+        public ReservationStatus Status { get; set; }
+
+        public Reservation() {}
 
         public Reservation(int id, int userId, ParkingSpot parkingSpot, DateTime start, DateTime end, decimal totalPrice)
         {

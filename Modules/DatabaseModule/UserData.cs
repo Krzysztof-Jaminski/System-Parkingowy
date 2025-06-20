@@ -1,3 +1,5 @@
+using Swashbuckle.AspNetCore.Filters;
+
 namespace System_Parkingowy.Modules.DatabaseModule
 {
     // Dane użytkownika dostarczane przez interfejs użytkownika
@@ -11,5 +13,20 @@ namespace System_Parkingowy.Modules.DatabaseModule
             Email = email;
             Password = password;
         }
+    }
+
+    public class UserDataExample : IExamplesProvider<UserData>
+    {
+        public UserData GetExamples() => new UserData("adam1@gmail.com", "Pass123");
+    }
+
+    public class AuthRegisterResponseExample : IExamplesProvider<string>
+    {
+        public string GetExamples() => "User registered";
+    }
+
+    public class AuthLoginResponseExample : IExamplesProvider<string>
+    {
+        public string GetExamples() => "[AuthModule] Logowanie udane.";
     }
 }
