@@ -17,7 +17,7 @@ namespace System_Parkingowy.Modules.DatabaseModule
 
     public class UserDataExample : IExamplesProvider<UserData>
     {
-        public UserData GetExamples() => new UserData("adam1@gmail.com", "Pass123");
+        public UserData GetExamples() => new UserData("example@email.com", "Example123");
     }
 
     public class AuthRegisterResponseExample : IExamplesProvider<string>

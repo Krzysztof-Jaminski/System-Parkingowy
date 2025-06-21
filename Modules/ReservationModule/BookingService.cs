@@ -54,7 +54,7 @@ namespace System_Parkingowy.Modules.BookingModule
             }
             catch (Exception ex)
             {
-                // Obsługa błędu
+                Console.WriteLine($"[ReservationManager] Błąd: {ex}");
             }
         }
 
@@ -97,7 +97,7 @@ namespace System_Parkingowy.Modules.BookingModule
             }
             catch (Exception ex)
             {
-                // Obsługa błędu
+                Console.WriteLine($"[ReservationManager] Błąd: {ex}");
             }
         }
 
@@ -119,7 +119,7 @@ namespace System_Parkingowy.Modules.BookingModule
             }
             catch (Exception ex)
             {
-                // Obsługa błędu
+                Console.WriteLine($"[ReservationManager] Błąd: {ex}");
             }
         }
 

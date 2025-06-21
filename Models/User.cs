@@ -82,6 +82,6 @@ namespace Models
 
     public class UserResponseExample : IExamplesProvider<User>
     {
-        public User GetExamples() => new User { Id = 1, Email = "adam1@gmail.com", PhoneNumber = "123456789", Password = "passwd123", Status = UserStatus.Active };
+        public User GetExamples() => new User { Id = 0, Email = "example@email.com", PhoneNumber = "000000000", Password = "example", Status = UserStatus.Active };
     }
 }

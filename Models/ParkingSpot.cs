@@ -47,6 +47,6 @@ namespace Models
 
     public class ParkingSpotResponseExample : IExamplesProvider<ParkingSpot>
     {
-        public ParkingSpot GetExamples() => new ParkingSpot { Id = 1, Location = "Location A", Zone = "A", Available = true };
+        public ParkingSpot GetExamples() => new ParkingSpot { Id = 0, Location = "Example Location", Zone = "X", Available = true };
     }
 }

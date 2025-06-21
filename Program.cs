@@ -14,8 +14,11 @@ using System_Parkingowy.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Ogranicz nasłuchiwanie tylko do localhost:5000
+builder.WebHost.UseUrls("http://localhost:5000");
+
 // Rejestracja serwisów w DI
-//Services.AddScoped<IDatabaseService, DatabaseService>();
+//builder.Services.AddScoped<IDatabaseService, DatabaseService>();
 builder.Services.AddScoped<INotificationFactory, StandardNotificationFactory>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -40,7 +43,18 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "System Parkingowy API",
         Version = "v1",
-        Description = "API do zarządzania parkingiem, rezerwacjami, użytkownikami i płatnościami."
+        Description = "API do zarządzania parkingiem, rezerwacjami, użytkownikami i płatnościami.\n\n" +
+            "# Architektura bazy danych\n" +
+            "System korzysta z Entity Framework Core i kontekstu ParkingDbContext. Wszystkie operacje na użytkownikach, miejscach parkingowych i rezerwacjach są realizowane bezpośrednio przez serwisy domenowe (np. AuthService, ReservationManager) z użyciem ParkingDbContext.\n" +
+            "\n## Moduł symulacji i sensorów\n" +
+            "System posiada moduł symulacji miejsc parkingowych, który generuje zdarzenia zajęcia/zwolnienia miejsc w oparciu o rozkład Poissona i różne typy czujników (ultrasonic, magnetic, camera).\n" +
+            "Każde miejsce posiada historię zmian zajętości (timestamp, zajętość, typ czujnika).\n" +
+            "API umożliwia pobieranie historii zajętości dla danego miejsca lub wszystkich miejsc (do predykcji).\n" +
+            "Możliwe jest ręczne wywołanie zdarzenia zmiany statusu miejsca (np. do testów).\n" +
+            "\n## Predykcja zajętości\n" +
+            "Dane historyczne mogą być wykorzystane do budowy modeli predykcyjnych (np. ARIMA, ML) i prognozowania dostępności miejsc w przyszłości.\n\n" +
+            "## Dostęp do bazy\n" +
+            "Dostęp do bazy danych odbywa się przez ParkingDbContext, który jest rejestrowany w DI i konfigurowany do pracy z SQL Server.\n"
     });
 
     // Przykładowe modele i requesty

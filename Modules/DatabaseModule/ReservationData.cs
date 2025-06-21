@@ -27,9 +27,9 @@ namespace System_Parkingowy.Modules.DatabaseModule
         public ReservationData GetExamples()
         {
             return new ReservationData(
-                userEmail: "adam1@gmail.com",
-                spotId: "1",
-                location: "Location A",
+                userEmail: "example@email.com",
+                spotId: "0",
+                location: "Example Location",
                 start: DateTime.Now.Date.AddHours(10),
                 end: DateTime.Now.Date.AddHours(12)
             );
