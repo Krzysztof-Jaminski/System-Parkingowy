@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Models;
+using System_Parkingowy.Models;
 
 namespace System_Parkingowy.Modules.DatabaseModule
 {

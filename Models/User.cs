@@ -1,4 +1,4 @@
-namespace Models
+namespace System_Parkingowy.Models
 {
     public enum UserStatus
     {

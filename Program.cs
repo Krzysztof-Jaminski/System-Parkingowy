@@ -5,55 +5,56 @@ using System_Parkingowy.Modules.DatabaseModule;
 using System_Parkingowy.Modules.NotificationModule;
 using System_Parkingowy.Modules.PaymentModule;
 using Models;
+using System_Parkingowy.Models;
+
+public class ParkingSystemFacade
+{
+    private readonly ReservationManager _reservationManager;
+    private readonly AuthService _authService;
+    private readonly DatabaseService _dbService;
+    private readonly NotificationService _notificationService;
+    public ParkingSystemFacade()
+    {
+        _dbService = new DatabaseService();
+        _notificationService = new NotificationService(new StandardNotificationFactory());
+        _authService = new AuthService(_dbService, _notificationService);
+        _reservationManager = new ReservationManager(_dbService, _notificationService);
+    }
+    public User RegisterAndVerifyUser(string email, string password)
+    {
+        var data = new UserData(email, password);
+        _authService.Register(data);
+        _authService.Verify(email);
+        return _dbService.GetUserByEmail(email);
+    }
+    public void BookSpot(User user, int spotId, DateTime start, DateTime end)
+    {
+        var spot = _dbService.GetSpotById(spotId);
+        var reservation = new Reservation(_dbService.GetNextReservationId(), user.Id, spot, start, end, 0);
+        _reservationManager.MakeReservation(reservation);
+    }
+    public void PayForReservation(int reservationId, PaymentFactory factory)
+    {
+        _reservationManager.PayForReservation(reservationId, factory);
+    }
+    public void CancelReservation(int reservationId)
+    {
+        _reservationManager.CancelReservation(reservationId);
+    }
+    public void SetFeeStrategy(IFeeStrategy strategy)
+    {
+        _reservationManager.SetFeeStrategy(strategy);
+    }
+}
 
 class Program
 {
     static void Main()
     {
-        var DbService = new DatabaseService();
-        var notificationService = new NotificationService(new StandardNotificationFactory());
-        var authService = new AuthService(DbService, notificationService);
-        var reservationManager = new ReservationManager(DbService, notificationService);
-
-        Console.WriteLine("\n=== SCENARIUSZ 1: REZERWACJA I ANULOWANIE ===");
-        reservationManager.SearchParkingSpot("Location A");
-
-        var user1 = RegisterAndVerifyUser(authService, DbService, "user1@example.com", "Pass123");
-        if (user1 == null) return;
-
-        var spot = DbService.GetSpotById(1);
-        var reservation1 = new Reservation(DbService.GetNextReservationId(), user1.Id, spot, 
-            DateTime.Now.Date.AddHours(10), DateTime.Now.Date.AddHours(12), 50.0m);
-        
-        reservationManager.MakeReservation(reservation1);
-        reservationManager.PayForReservation(reservation1.Id, new CreditCardPaymentFactory());
-        reservationManager.CancelReservation(reservation1.Id);
-
-        Console.WriteLine("\n=== SCENARIUSZ 2: DWIE REZERWACJE W RÓŻNYCH TERMINACH ===");
-        reservationManager.SearchParkingSpot("Location A");
-
-        var user2 = RegisterAndVerifyUser(authService, DbService, "user2@example.com", "Pass456");
-        var user3 = RegisterAndVerifyUser(authService, DbService, "user3@example.com", "Pass789");
-        if (user2 == null || user3 == null) return;
-
-        var reservation2 = new Reservation(DbService.GetNextReservationId(), user2.Id, spot,
-            DateTime.Now.Date.AddHours(8), DateTime.Now.Date.AddHours(10), 40.0m);
-        var reservation3 = new Reservation(DbService.GetNextReservationId(), user3.Id, spot,
-            DateTime.Now.Date.AddHours(14), DateTime.Now.Date.AddHours(16), 40.0m);
-
-        reservationManager.MakeReservation(reservation2);
-        reservationManager.PayForReservation(reservation2.Id, new CreditCardPaymentFactory());
-        reservationManager.MakeReservation(reservation3);
-
-        Console.WriteLine($"\nStatus rezerwacji 2: {reservationManager.GetReservationStatus(reservation2.Id)}");
-        Console.WriteLine($"Status rezerwacji 3: {reservationManager.GetReservationStatus(reservation3.Id)}");
-        Console.ReadKey();
-    }
-
-    private static User RegisterAndVerifyUser(AuthService authService, DatabaseService dbService, string email, string password)
-    {
-        authService.Register(new UserData(email, password));
-        authService.Verify(email);
-        return dbService.GetUserByEmail(email);
+        var facade = new ParkingSystemFacade();
+        var user = facade.RegisterAndVerifyUser("user@example.com", "Pass123");
+        facade.BookSpot(user, 1, DateTime.Now.Date.AddHours(10), DateTime.Now.Date.AddHours(12));
+        facade.SetFeeStrategy(new VipFeeStrategy());
+        facade.BookSpot(user, 2, DateTime.Now.Date.AddHours(13), DateTime.Now.Date.AddHours(15));
     }
 }

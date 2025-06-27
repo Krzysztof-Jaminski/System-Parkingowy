@@ -1,7 +1,9 @@
+using System_Parkingowy.Modules.NotificationModule;
+
 namespace System_Parkingowy.Modules.NotificationModule
 {
-    public interface INotifier
+    public interface INotifier : IObserver
     {
-        void SendMessage(string recipientEmail, string messageContent); // Deklaruje metodę do wysyłania wiadomości
+        void SendMessage(string recipient, string messageContent);
     }
 } 

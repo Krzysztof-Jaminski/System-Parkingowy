@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System_Parkingowy.Modules.NotificationModule;
 
 namespace System_Parkingowy.Modules.NotificationModule
 {
-    public class NotificationService
+    public class NotificationService : ISubject
     {
+        private readonly List<IObserver> _observers = new();
         private readonly INotificationFactory _notificationFactory;
 
         public NotificationService(INotificationFactory notificationFactory)
@@ -11,24 +14,25 @@ namespace System_Parkingowy.Modules.NotificationModule
             _notificationFactory = notificationFactory;
         }
 
-        public void SendNotifications(string recipientIdentifier, string messageContent, NotificationType type)
+        public void Attach(IObserver observer)
         {
-            INotifier notifier;
-            switch (type)
-            {
-                case NotificationType.Email:
-                    notifier = _notificationFactory.CreateEmailNotifier();
-                    break;
-                case NotificationType.Sms:
-                    notifier = _notificationFactory.CreateSmsNotifier();
-                    break;
-                case NotificationType.Push:
-                    notifier = _notificationFactory.CreatePushNotifier();
-                    break;
-                default:
-                    throw new ArgumentException("Nieznany typ powiadomienia.");
-            }
-            notifier.SendMessage(recipientIdentifier, messageContent);
+            _observers.Add(observer);
+        }
+
+        public void Detach(IObserver observer)
+        {
+            _observers.Remove(observer);
+        }
+
+        public void Notify(string message)
+        {
+            foreach (var observer in _observers)
+                observer.Update(message);
+        }
+
+        public void SendNotifications(string recipient, string messageContent, NotificationType type)
+        {
+            Notify($"[{type}] {recipient}: {messageContent}");
         }
     }
 }
