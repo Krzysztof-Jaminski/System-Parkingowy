@@ -30,6 +30,11 @@ public class ParkingSystemFacade
     public void BookSpot(User user, int spotId, DateTime start, DateTime end)
     {
         var spot = _dbService.GetSpotById(spotId);
+        if (spot == null)
+        {
+            Console.WriteLine($"[Facade] Nie znaleziono miejsca parkingowego o ID {spotId}.");
+            return;
+        }
         var reservation = new Reservation(_dbService.GetNextReservationId(), user.Id, spot, start, end, 0);
         _reservationManager.MakeReservation(reservation);
     }
@@ -44,17 +49,5 @@ public class ParkingSystemFacade
     public void SetFeeStrategy(IFeeStrategy strategy)
     {
         _reservationManager.SetFeeStrategy(strategy);
-    }
-}
-
-class Program
-{
-    static void Main()
-    {
-        var facade = new ParkingSystemFacade();
-        var user = facade.RegisterAndVerifyUser("user@example.com", "Pass123");
-        facade.BookSpot(user, 1, DateTime.Now.Date.AddHours(10), DateTime.Now.Date.AddHours(12));
-        facade.SetFeeStrategy(new VipFeeStrategy());
-        facade.BookSpot(user, 2, DateTime.Now.Date.AddHours(13), DateTime.Now.Date.AddHours(15));
     }
 }

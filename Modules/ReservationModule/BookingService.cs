@@ -66,6 +66,19 @@ namespace System_Parkingowy.Modules.BookingModule
 
         public void MakeReservation(Reservation reservation)
         {
+            // Walidacja: start musi być < end
+            if (reservation.StartTime >= reservation.EndTime)
+            {
+                Console.WriteLine($"[BookingModule] Nieprawidłowy czas rezerwacji: start {reservation.StartTime} >= end {reservation.EndTime}");
+                return;
+            }
+
+            if (reservation.ParkingSpot == null)
+            {
+                Console.WriteLine("[BookingModule] Nie podano miejsca parkingowego (null). Rezerwacja przerwana.");
+                return;
+            }
+
             var user = _db.GetUserById(reservation.UserId);
             if (user == null)
             {
