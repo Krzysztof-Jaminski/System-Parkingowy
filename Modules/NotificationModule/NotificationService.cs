@@ -27,16 +27,7 @@ namespace System_Parkingowy.Modules.NotificationModule
         public void Notify(string message)
         {
             foreach (var observer in _observers)
-            {
-                try
-                {
-                    observer.Update(message);
-                }
-                catch
-                {
-                    // Ignoruj wyjątki z observerów, można dodać logowanie
-                }
-            }
+                observer.Update(message);
         }
 
         public void SendNotifications(string recipient, string messageContent, NotificationType type)
