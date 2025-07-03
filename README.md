@@ -431,5 +431,3 @@ classDiagram
 - **Narzędzia:** Visual Studio, Git, Mermaid Live Editor
 
 ---
-
-**Diagramy można przekonwertować do graficznej postaci np. na stronie https://mermaid.live/** 
