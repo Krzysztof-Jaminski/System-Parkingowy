@@ -424,10 +424,10 @@ classDiagram
 - **Język:** C# (.NET Core)
 - **Baza danych:** MS SQL Server / PostgreSQL
 - **Wzorce projektowe:** Factory Method, Abstract Factory, Adapter, Observer, Strategy, Facade
-- **Diagramy:** UML (Mermaid, PlantUML)
+- **Diagramy:** UML
 - **Powiadomienia:** Email (SMTP), SMS, Push
 - **Płatności:** BLIK, Karta, PayPal, PayU (Adapter)
-- **Testy:** xUnit/NUnit (propozycja)
-- **Narzędzia:** Visual Studio, Git, Mermaid Live Editor
+- **Testy:** xUnit/NUnit
+- **Narzędzia:** Visual Studio, Git
 
 ---
