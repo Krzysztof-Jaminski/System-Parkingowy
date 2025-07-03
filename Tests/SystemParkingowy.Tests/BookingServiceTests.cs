@@ -12,7 +12,6 @@ namespace SystemParkingowy.Tests
 {
     public class BookingServiceTests
     {
-        // Normalny: Użytkownik aktywny rezerwuje dostępne miejsce
         [Fact]
         public void MakeReservation_ShouldAddReservation_WhenSpotIsAvailable()
         {
@@ -29,7 +28,6 @@ namespace SystemParkingowy.Tests
             Assert.Equal(ReservationStatus.Confirmed, reservation.Status);
         }
 
-        // Błędny: Użytkownik zablokowany próbuje zarezerwować miejsce
         [Fact]
         public void MakeReservation_ShouldNotAdd_WhenUserIsBlocked()
         {
@@ -47,7 +45,6 @@ namespace SystemParkingowy.Tests
             Assert.NotEqual(ReservationStatus.Confirmed, reservation.Status);
         }
 
-        // Błędny: Użytkownik nie istnieje
         [Fact]
         public void MakeReservation_ShouldNotAdd_WhenUserDoesNotExist()
         {
@@ -62,7 +59,6 @@ namespace SystemParkingowy.Tests
             Assert.NotEqual(ReservationStatus.Confirmed, reservation.Status);
         }
 
-        // Błędny: Próba rezerwacji zajętego miejsca (nakładanie się rezerwacji)
         [Fact]
         public void MakeReservation_ShouldSendNotification_WhenOverlapping()
         {
@@ -85,7 +81,6 @@ namespace SystemParkingowy.Tests
             Assert.True(notified);
         }
 
-        // Graniczny: Rezerwacja na granicy czasu (start == end)
         [Fact]
         public void MakeReservation_ShouldNotAdd_WhenStartEqualsEnd()
         {
@@ -101,6 +96,94 @@ namespace SystemParkingowy.Tests
             var reservation = new Reservation(6, 5, spot, now, now, 0);
             manager.MakeReservation(reservation);
             Assert.NotEqual(ReservationStatus.Confirmed, reservation.Status);
+        }
+
+        [Fact]
+        public void EditReservation_ShouldUpdateTimes_WhenNoOverlap()
+        {
+            var mockDb = new Mock<IDatabaseService>();
+            var mockNotification = new Mock<NotificationService>(new StandardNotificationFactory());
+            var user = new User(10, "edit@example.com", "123456789", "pass");
+            user.Activate();
+            var spot = new ParkingSpot(10, "F", "Z10");
+            mockDb.Setup(d => d.GetUserById(10)).Returns(user);
+            mockDb.Setup(d => d.GetAllParkingSpots()).Returns(new List<ParkingSpot> { spot });
+            var manager = new ReservationManager(mockDb.Object, mockNotification.Object);
+            var reservation = new Reservation(10, 10, spot, DateTime.Now, DateTime.Now.AddHours(1), 0);
+            manager.MakeReservation(reservation);
+            var newStart = DateTime.Now.AddHours(2);
+            var newEnd = DateTime.Now.AddHours(3);
+            manager.EditReservation(10, newStart, newEnd);
+            Assert.Equal(newStart, reservation.StartTime);
+            Assert.Equal(newEnd, reservation.EndTime);
+        }
+
+        [Fact]
+        public void CancelReservation_ShouldSetStatusToCancelled()
+        {
+            var mockDb = new Mock<IDatabaseService>();
+            var mockNotification = new Mock<NotificationService>(new StandardNotificationFactory());
+            var user = new User(11, "cancel@example.com", "123456789", "pass");
+            user.Activate();
+            var spot = new ParkingSpot(11, "G", "Z11");
+            mockDb.Setup(d => d.GetUserById(11)).Returns(user);
+            mockDb.Setup(d => d.GetAllParkingSpots()).Returns(new List<ParkingSpot> { spot });
+            var manager = new ReservationManager(mockDb.Object, mockNotification.Object);
+            var reservation = new Reservation(11, 11, spot, DateTime.Now, DateTime.Now.AddHours(1), 0);
+            manager.MakeReservation(reservation);
+            manager.CancelReservation(11);
+            Assert.Equal(ReservationStatus.Cancelled, reservation.Status);
+        }
+
+        [Fact]
+        public void MakeReservation_ShouldNotAdd_WhenParkingSpotIsNull()
+        {
+            var mockDb = new Mock<IDatabaseService>();
+            var mockNotification = new Mock<NotificationService>(new StandardNotificationFactory());
+            var user = new User(12, "nullspot@example.com", "123456789", "pass");
+            user.Activate();
+            mockDb.Setup(d => d.GetUserById(12)).Returns(user);
+            var manager = new ReservationManager(mockDb.Object, mockNotification.Object);
+            var reservation = new Reservation(12, 12, null, DateTime.Now, DateTime.Now.AddHours(1), 0);
+            manager.MakeReservation(reservation);
+            Assert.NotEqual(ReservationStatus.Confirmed, reservation.Status);
+        }
+
+        [Fact]
+        public void GetReservationStatus_ShouldReturnCorrectStatus()
+        {
+            var mockDb = new Mock<IDatabaseService>();
+            var mockNotification = new Mock<NotificationService>(new StandardNotificationFactory());
+            var user = new User(13, "status@example.com", "123456789", "pass");
+            user.Activate();
+            var spot = new ParkingSpot(13, "H", "Z13");
+            mockDb.Setup(d => d.GetUserById(13)).Returns(user);
+            mockDb.Setup(d => d.GetAllParkingSpots()).Returns(new List<ParkingSpot> { spot });
+            var manager = new ReservationManager(mockDb.Object, mockNotification.Object);
+            var reservation = new Reservation(13, 13, spot, DateTime.Now, DateTime.Now.AddHours(1), 0);
+            manager.MakeReservation(reservation);
+            var status = manager.GetReservationStatus(13);
+            Assert.Equal(ReservationStatus.Confirmed, status);
+        }
+
+        [Fact]
+        public void EditReservation_ShouldNotUpdate_WhenOverlapExists()
+        {
+            var mockDb = new Mock<IDatabaseService>();
+            var mockNotification = new Mock<NotificationService>(new StandardNotificationFactory());
+            var user = new User(14, "overlapedit@example.com", "123456789", "pass");
+            user.Activate();
+            var spot = new ParkingSpot(14, "I", "Z14");
+            mockDb.Setup(d => d.GetUserById(14)).Returns(user);
+            mockDb.Setup(d => d.GetAllParkingSpots()).Returns(new List<ParkingSpot> { spot });
+            var manager = new ReservationManager(mockDb.Object, mockNotification.Object);
+            var reservation1 = new Reservation(14, 14, spot, DateTime.Now, DateTime.Now.AddHours(2), 0);
+            var reservation2 = new Reservation(15, 14, spot, DateTime.Now.AddHours(3), DateTime.Now.AddHours(4), 0);
+            manager.MakeReservation(reservation1);
+            manager.MakeReservation(reservation2);
+            var oldStart = reservation2.StartTime;
+            manager.EditReservation(15, DateTime.Now.AddHours(1), DateTime.Now.AddHours(2).AddMinutes(30));
+            Assert.Equal(oldStart, reservation2.StartTime);
         }
     }
 } 
