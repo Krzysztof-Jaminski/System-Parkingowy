@@ -182,46 +182,6 @@ System uruchamia się poprzez klasę `Program` i korzysta z fasady `ParkingSyste
 
 - ![image](https://github.com/user-attachments/assets/4222e857-cf37-4d67-a76d-a0f9b5f58273)
 
-
----
-
-## Diagram przypadków użycia UML
-
-```mermaid
-usecaseDiagram
-  actor "Użytkownik" as User
-  actor "Administrator" as Admin
-  User --> (Rejestracja konta)
-  User --> (Logowanie)
-  User --> (Przeglądanie miejsc parkingowych)
-  User --> (Rezerwacja miejsca)
-  User --> (Anulowanie rezerwacji)
-  User --> (Płatność za rezerwację)
-  User --> (Otrzymywanie powiadomień)
-  Admin --> (Zarządzanie użytkownikami)
-  Admin --> (Zarządzanie miejscami parkingowymi)
-  Admin --> (Generowanie raportów)
-  Admin --> (Konfiguracja powiadomień i płatności)
-```
-
----
-
-## Architektura systemu – diagram komponentów UML
-
-```mermaid
-componentDiagram
-    [UI (Konsola/WWW)] -- "IAuthService" --> [Moduł Autoryzacji]
-    [UI (Konsola/WWW)] -- "IBookingService" --> [Moduł Rezerwacji]
-    [UI (Konsola/WWW)] -- "INotificationFactory" --> [Moduł Powiadomień]
-    [UI (Konsola/WWW)] -- "IPayment" --> [Moduł Płatności]
-    [Moduł Autoryzacji] -- "IDatabaseService" --> [Moduł Bazy Danych]
-    [Moduł Rezerwacji] -- "IDatabaseService" --> [Moduł Bazy Danych]
-    [Moduł Rezerwacji] -- "INotifier" --> [Moduł Powiadomień]
-    [Moduł Płatności] -- "PaymentFactory" --> [Moduł Płatności]
-    [Moduł Powiadomień] -- "ISubject/IObserver" --> [Moduł Powiadomień]
-    [Moduł Bazy Danych] -- "SQL/ORM" --> [Baza Danych]
-```
-
 ---
 
 ## Diagram klas UML (przykład – Moduł Rezerwacji)
