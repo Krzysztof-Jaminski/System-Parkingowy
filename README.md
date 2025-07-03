@@ -40,13 +40,16 @@ cd System-Parkingowy-Lib-/Tests/SystemParkingowy.Tests
 dotnet test
 ```
 
+![image](https://github.com/user-attachments/assets/5653c85e-7703-4f0d-806f-47b09f3327d4)
+
+
 #### Pokrycie testów (coverage)
 
 Po uruchomieniu testów generowany jest raport pokrycia w pliku `coverage.xml` oraz w katalogu `coverage-report/`.
 
 **Miejsce na zrzut ekranu z raportu pokrycia:**
 
-![Coverage screenshot](coverage-report/coverage-summary.png)
+![image](https://github.com/user-attachments/assets/246bcf14-17e5-4ade-a7d1-60ab939ea829)
 
 ### System-Parkingowy-API
 
@@ -64,40 +67,17 @@ Po uruchomieniu testów generowany jest raport pokrycia w pliku `coverage.xml` o
 
 #### Dokumentacja API (Swagger)
 
-Po uruchomieniu projektu API dostępna jest dokumentacja Swagger pod adresem:
+Po uruchomieniu projektu API dostępna jest dokumentacja Swagger pod adresem: http://localhost:5000/swagger/index.html
 
-```
-http://localhost:<port>/swagger
-```
+![image](https://github.com/user-attachments/assets/7924b8bf-0502-443a-9eca-7be6d657e1e7)
 
-**Miejsce na zrzut ekranu ze Swaggera:**
-
-![Swagger screenshot](swagger-screenshot.png)
-
-#### Uruchamianie testów (jeśli dotyczy)
-
-```sh
-cd System-Parkingowy-API
-# .NET CLI:
-dotnet test
-```
 
 ### System-Parkingowy-Console-
 
 - Aplikacja konsolowa korzystająca z biblioteki.
-- Uruchamianie testów (jeśli dotyczy):
 
-```sh
-cd System-Parkingowy-Console-
-# .NET CLI:
-dotnet test
-```
+![image](https://github.com/user-attachments/assets/9ecf3154-70b7-4483-bf38-27f2fc287637)
 
-#### Miejsce na zrzut ekranu z przechodzących testów
-
-![Testy przechodzące](tests-passing.png)
-
----
 
 ## Opis systemu i użytkowników
 
@@ -169,7 +149,10 @@ System parkingowy służy do zarządzania rezerwacjami miejsc parkingowych w fir
 
 ---
 
-## Opis działania systemu (na podstawie Program.cs)
+## Opis działania systemu (na przykładzie Program.cs)
+
+![image](https://github.com/user-attachments/assets/55631423-f77c-4c04-b684-b4d78f2f3d04)
+
 
 System uruchamia się poprzez klasę `Program` i korzysta z fasady `ParkingSystemFacade`, która upraszcza interakcję z głównymi modułami systemu:
 
@@ -196,6 +179,9 @@ System uruchamia się poprzez klasę `Program` i korzysta z fasady `ParkingSyste
 - Rezerwuje miejsce parkingowe na wybrany termin.
 - Zmienia strategię opłat na VIP.
 - Rezerwuje kolejne miejsce na inny termin.
+
+- ![image](https://github.com/user-attachments/assets/4222e857-cf37-4d67-a76d-a0f9b5f58273)
+
 
 ---
 
